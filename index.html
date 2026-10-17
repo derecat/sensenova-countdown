@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SenseNova · 额度重置倒计时</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --bg-soft: #101012;
+    --card: rgba(255,255,255,0.025);
+    --card-border: rgba(255,255,255,0.07);
+    --text: #f4f4f5;
+    --text-dim: rgba(244,244,245,0.45);
+    --text-faint: rgba(244,244,245,0.28);
+    --accent: #c9a87c;
+    --accent-soft: rgba(201,168,124,0.15);
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,124,0.06), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 50% 110%, rgba(255,255,255,0.025), transparent 60%),
+      var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    gap: 56px;
+  }
+
+  .header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .header .brand {
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 500;
+  }
+
+  .header h1 {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 0.01em;
+  }
+
+  .cards {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 920px;
+  }
+
+  .card {
+    flex: 1 1 360px;
+    min-width: 320px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 36px 36px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    backdrop-filter: blur(20px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    padding: 1px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent 40%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .card-head {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .card-label {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 500;
+  }
+
+  .card-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: 0.005em;
+  }
+
+  .countdown {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(2.6rem, 6vw, 3.6rem);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .group { display: inline-flex; }
+
+  .digit {
+    display: inline-block;
+    height: 1em;
+    overflow: hidden;
+    vertical-align: top;
+  }
+
+  .reel {
+    display: flex;
+    flex-direction: column;
+    transition: transform 450ms var(--ease-in-out);
+  }
+
+  .reel span {
+    height: 1em;
+    line-height: 1;
+    display: block;
+  }
+
+  .sep {
+    color: var(--text-faint);
+    margin: 0 2px;
+    font-weight: 400;
+  }
+
+  .days {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.32em;
+    font-weight: 500;
+    color: var(--accent);
+    margin-right: 10px;
+    align-self: center;
+    letter-spacing: 0.04em;
+  }
+
+  .reset-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .reset-info .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .reset-info .label {
+    color: var(--text-faint);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  .reset-info .value {
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pool {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pool-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+  }
+
+  .pool-label {
+    color: var(--text-faint);
+    letter-spacing: 0.02em;
+  }
+
+  .pool-value {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+
+  .pool-value .total {
+    color: var(--text-faint);
+    font-weight: 400;
+  }
+
+  .track {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-soft), var(--accent));
+    border-radius: 2px;
+    transform-origin: left center;
+    transform: scaleX(0);
+    transition: transform 700ms var(--ease-out);
+  }
+
+  .footer {
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reel { transition: none; }
+    .fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand">SenseNova · Free</div>
+    <h1>额度重置倒计时</h1>
+  </div>
+
+  <div class="cards">
+
+    <div class="card" data-card="window">
+      <div class="card-head">
+        <div class="card-label">5 小时窗口</div>
+        <div class="card-title">Flash-Lite 专属积分池</div>
+      </div>
+      <div class="countdown" data-countdown="window"></div>
+      <div class="pool">
+        <div class="pool-head">
+          <span class="pool-label">窗口余额</span>
+          <span class="pool-value"><span data-balance="window">60,000</span> <span class="total">/ 60,000</span></span>
+        </div>
+        <div class="track"><div class="fill" data-fill="window"></div></div>
+      </div>
+      <div class="reset-info">
+        <div class="row"><span class="label">下次重置</span><span class="value" data-reset="window">—</span></div>
+        <div class="row"><span class="label">周期</span><span class="value">每 5 小时滚动</span></div>
+      </div>
+    </div>
+
+    <div class="card" data-card="weekly">
+      <div class="card-head">
+        <div class="card-label">周额度</div>
+        <div class="card-title">通用积分池 · 全模型可用</div>
+      </div>
+      <div class="countdown" data-countdown="weekly"></div>
+      <div class="pool">
+        <div class="pool-head">
+          <span class="pool-label">本周余额</span>
+          <span class="pool-value"><span data-balance="weekly">533,992</span> <span class="total">/ 600,000</span></span>
+        </div>
+        <div class="track"><div class="fill" data-fill="weekly"></div></div>
+      </div>
+      <div class="reset-info">
+        <div class="row"><span class="label">下次重置</span><span class="value" data-reset="weekly">—</span></div>
+        <div class="row"><span class="label">周期</span><span class="value">每 7 天重置</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">数据基于 2026-10-17 快照 · 周期按官方规则推算</div>
+
+<script>
+(function () {
+  // 时区: Asia/Shanghai (+08:00)
+  // 5h 窗口参考边界: 2026-10-17 19:30:00 +08:00
+  // 周额度参考边界: 2026-10-18 08:30:00 +08:00
+  const refs = {
+    window: { base: Date.UTC(2026, 9, 17, 11, 30, 0), period: 5 * 3600 * 1000 },  // 11:30 UTC = 19:30 +08
+    weekly: { base: Date.UTC(2026, 9, 18, 0, 30, 0),  period: 7 * 24 * 3600 * 1000 } // 00:30 UTC = 08:30 +08
+  };
+
+  const balances = {
+    window: { used: 0, total: 60000 },
+    weekly: { used: 60000 - 533992.208, total: 600000 }
+  };
+
+  function nextBoundary(key) {
+    const { base, period } = refs[key];
+    let next = base;
+    const now = Date.now();
+    while (next <= now) next += period;
+    return next;
+  }
+
+  function pad(n, len) {
+    return String(n).padStart(len, '0');
+  }
+
+  function fmtRemaining(ms) {
+    if (ms < 0) ms = 0;
+    const s = Math.floor(ms / 1000);
+    const days = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return { days, h, m, sec };
+  }
+
+  function fmtReset(ts) {
+    const d = new Date(ts);
+    const opt = { timeZone: 'Asia/Shanghai', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+    return new Intl.DateTimeFormat('zh-CN', opt).format(d).replace(/\//g, '月').replace(/月(\d+),?/, '月$1日') + ' (CST)';
+  }
+
+  // ---- 数字翻牌组件 ----
+  function buildCountdown(el, includeDays) {
+    const parts = includeDays
+      ? ['d','h','m','s']
+      : ['h','m','s'];
+    el.innerHTML = '';
+    const state = { digits: {} };
+    parts.forEach((key, idx) => {
+      if (key === 'd') {
+        const dWrap = document.createElement('span');
+        dWrap.className = 'group days';
+        dWrap.dataset.group = 'd';
+        const dNum = document.createElement('span');
+        dNum.className = 'days-num';
+        dNum.textContent = '0天';
+        dWrap.appendChild(dNum);
+        el.appendChild(dWrap);
+      } else {
+        const len = 2;
+        for (let i = 0; i < len; i++) {
+          const slot = document.createElement('span');
+          slot.className = 'digit';
+          const reel = document.createElement('span');
+          reel.className = 'reel';
+          for (let n = 0; n <= 9; n++) {
+            const s = document.createElement('span');
+            s.textContent = n;
+            reel.appendChild(s);
+          }
+          slot.appendChild(reel);
+          slot.dataset.value = '0';
+          reel.style.transform = 'translateY(0%)';
+          el.appendChild(slot);
+          const slotKey = key + i;
+          state.digits[slotKey] = { reel, slot, value: 0 };
+        }
+        if (idx < parts.length - 1) {
+          const sep = document.createElement('span');
+          sep.className = 'sep';
+          sep.textContent = ':';
+          el.appendChild(sep);
+        }
+      }
+    });
+    return state;
+  }
+
+  function setDigit(obj, value) {
+    if (obj.value === value) return;
+    obj.value = value;
+    obj.reel.style.transform = 'translateY(' + (value * -10) + '%)';
+  }
+
+  function updateCountdown(el, state, r) {
+    const nums = [pad(r.h, 2), pad(r.m, 2), pad(r.sec, 2)];
+    let idx = 0;
+    if (state.digits['h0'] === undefined) {
+      // 含天数
+      const daysEl = el.querySelector('.days-num');
+      const dText = r.days + '天';
+      if (daysEl.textContent !== dText) daysEl.textContent = dText;
+    }
+    ['h','m','s'].forEach(key => {
+      const str = pad(key === 'h' ? r.h : key === 'm' ? r.m : r.sec, 2);
+      for (let i = 0; i < 2; i++) {
+        const v = parseInt(str[i], 10);
+        const obj = state.digits[key + i];
+        if (obj) setDigit(obj, v);
+      }
+    });
+  }
+
+  function updateFill(key, used, total) {
+    const p = total > 0 ? Math.max(0, Math.min(1, 1 - used / total)) : 0;
+    const el = document.querySelector('[data-fill="' + key + '"]');
+    if (el) el.style.transform = 'scaleX(' + p + ')';
+  }
+
+  const winEl = document.querySelector('[data-countdown="window"]');
+  const weekEl = document.querySelector('[data-countdown="weekly"]');
+  const winState = buildCountdown(winEl, false);
+  const weekState = buildCountdown(weekEl, true);
+
+  function tick() {
+    const now = Date.now();
+    const winNext = nextBoundary('window');
+    const weekNext = nextBoundary('weekly');
+    document.querySelector('[data-reset="window"]').textContent = fmtReset(winNext);
+    document.querySelector('[data-reset="weekly"]').textContent = fmtReset(weekNext);
+    updateCountdown(winEl, winState, fmtRemaining(winNext - now));
+    updateCountdown(weekEl, weekState, fmtRemaining(weekNext - now));
+    updateFill('window', balances.window.used, balances.window.total);
+    updateFill('weekly', balances.weekly.used, balances.weekly.total);
+  }
+
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
