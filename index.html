@@ -6,136 +6,214 @@
 <title>SenseNova · 额度重置倒计时</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0c;
-    --bg-soft: #101012;
-    --card: rgba(255,255,255,0.025);
-    --card-border: rgba(255,255,255,0.07);
-    --text: #f4f4f5;
-    --text-dim: rgba(244,244,245,0.45);
-    --text-faint: rgba(244,244,245,0.28);
-    --accent: #c9a87c;
-    --accent-soft: rgba(201,168,124,0.15);
+    --paper: #e9e7e1;
+    --paper-2: #e2e0d8;
+    --ink: #161616;
+    --ink-mute: #6f6c64;
+    --ink-faint: #9a978e;
+    --rule: rgba(22, 22, 22, 0.14);
+    --rule-soft: rgba(22, 22, 22, 0.08);
+    --accent: #cc2020;
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --spin: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', system-ui, sans-serif;
+    background:
+      radial-gradient(ellipse 90% 60% at 50% -20%, rgba(204, 32, 32, 0.04), transparent 60%),
+      var(--paper);
+    color: var(--ink);
+    font-family: 'Space Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100dvh;
     overflow-x: hidden;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
   }
 
   body {
-    background:
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,124,0.06), transparent 60%),
-      radial-gradient(ellipse 60% 40% at 50% 110%, rgba(255,255,255,0.025), transparent 60%),
-      var(--bg);
     display: flex;
     flex-direction: column;
+    min-height: 100dvh;
+    padding: 20px 18px;
+  }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    padding: 48px 24px;
-    gap: 56px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ink);
+    font-size: 12px;
+    letter-spacing: 0.02em;
   }
 
-  .header {
-    text-align: center;
+  .topbar .brand {
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+  }
+
+  .topbar .brand .dot {
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    margin-right: 8px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    animation: pulse 2.4s var(--ease-in-out) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(204, 32, 32, 0.5); }
+    50% { box-shadow: 0 0 0 7px rgba(204, 32, 32, 0); }
+  }
+
+  .topbar .status {
+    color: var(--ink-mute);
+    font-weight: 400;
+    text-align: right;
+  }
+
+  .topbar .status b {
+    color: var(--ink);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  /* ---------- 标题 ---------- */
+  .heading {
+    padding: 24px 0 20px;
+  }
+
+  .heading .eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 10px;
+  }
+
+  .heading h1 {
+    font-size: 1.7rem;
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .heading h1 b {
+    font-weight: 700;
+  }
+
+  /* ---------- 网格 ---------- */
+  .grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    border-bottom: 1px solid var(--ink);
+    flex: 1;
+  }
+  /* 顶部规线绘制动画 */
+  .grid::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: var(--ink);
+    transform: scaleX(0);
+    transform-origin: left center;
+    animation: drawLine 900ms var(--ease-out) 150ms forwards;
+  }
+  @keyframes drawLine { to { transform: scaleX(1); } }
+
+  .cell {
+    padding: 22px 0 20px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 18px;
+    position: relative;
+    /* clip-path 揭幕入场 */
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+    animation: cellIn 900ms var(--ease-in-out) forwards;
+  }
+  .cell:nth-child(1) { animation-delay: 300ms; }
+  .cell:nth-child(2) { animation-delay: 460ms; }
+
+  @keyframes cellIn {
+    0% { clip-path: inset(0 0 100% 0); opacity: 0; }
+    60% { opacity: 1; }
+    100% { clip-path: inset(0 0 0 0); opacity: 1; }
   }
 
-  .header .brand {
-    font-size: 12px;
+  .cell + .cell {
+    border-top: 1px solid var(--rule);
+  }
+
+  .cell-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .cell-tag {
+    font-size: 11px;
+    font-weight: 600;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--text-faint);
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .cell-title {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--ink-mute);
+    text-align: right;
+    letter-spacing: 0.005em;
+    line-height: 1.3;
+  }
+
+  /* ---------- 倒计时(老虎机式翻滚) ---------- */
+  .countdown {
+    font-size: clamp(2.6rem, 13vw, 3.2rem);
     font-weight: 500;
-  }
-
-  .header h1 {
-    font-size: 17px;
-    font-weight: 500;
-    color: var(--text-dim);
-    letter-spacing: 0.01em;
-  }
-
-  .cards {
+    line-height: 1;
+    letter-spacing: -0.035em;
     display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
-    max-width: 920px;
-  }
-
-  .card {
-    flex: 1 1 360px;
-    min-width: 320px;
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    border-radius: 20px;
-    padding: 36px 36px 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-    backdrop-filter: blur(20px);
+    align-items: baseline;
+    gap: 1px;
+    color: var(--ink);
     position: relative;
     overflow: hidden;
   }
-
-  .card::before {
+  /* 光带扫掠 */
+  .countdown::after {
     content: "";
     position: absolute;
-    inset: 0;
-    border-radius: 20px;
-    padding: 1px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent 40%);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
+    top: 0; bottom: 0;
+    left: -60%;
+    width: 50%;
+    background: linear-gradient(90deg, transparent, rgba(204, 32, 32, 0.08), rgba(255, 255, 255, 0.55), rgba(204, 32, 32, 0.08), transparent);
+    transform: skewX(-18deg);
     pointer-events: none;
+    animation: sweep 1600ms var(--ease-out) 500ms forwards;
   }
-
-  .card-head {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .card-label {
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--text-faint);
-    font-weight: 500;
-  }
-
-  .card-title {
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--text);
-    letter-spacing: 0.005em;
-  }
-
-  .countdown {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: clamp(2.6rem, 6vw, 3.6rem);
-    font-weight: 500;
-    line-height: 1;
-    letter-spacing: -0.01em;
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    font-variant-numeric: tabular-nums;
+  @keyframes sweep {
+    0% { left: -60%; }
+    100% { left: 120%; }
   }
 
   .group { display: inline-flex; }
@@ -145,12 +223,22 @@
     height: 1em;
     overflow: hidden;
     vertical-align: top;
+    position: relative;
+  }
+  /* 数字底部细微阴影,增强翻牌机械感 */
+  .digit::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 1px;
+    background: rgba(22, 22, 22, 0.08);
+    pointer-events: none;
   }
 
   .reel {
     display: flex;
     flex-direction: column;
-    transition: transform 450ms var(--ease-in-out);
+    transition: transform 550ms var(--overshoot);
   }
 
   .reel span {
@@ -160,170 +248,268 @@
   }
 
   .sep {
-    color: var(--text-faint);
-    margin: 0 2px;
-    font-weight: 400;
+    color: var(--ink-faint);
+    margin: 0 1px;
+    font-weight: 300;
+    animation: blinkSep 1s steps(2, end) infinite;
+  }
+  @keyframes blinkSep {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0.25; }
   }
 
   .days {
-    font-family: 'Inter', sans-serif;
     font-size: 0.32em;
-    font-weight: 500;
-    color: var(--accent);
+    font-weight: 600;
+    color: var(--ink-mute);
     margin-right: 10px;
     align-self: center;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.01em;
+    flex-shrink: 0;
+    animation: daysIn 600ms var(--ease-out) 700ms backwards;
+  }
+  @keyframes daysIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  .reset-info {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--text-dim);
-  }
-
-  .reset-info .row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .reset-info .label {
-    color: var(--text-faint);
-    font-size: 12px;
-    letter-spacing: 0.02em;
-  }
-
-  .reset-info .value {
-    color: var(--text-dim);
-    font-variant-numeric: tabular-nums;
-  }
-
+  /* ---------- 进度规线 ---------- */
   .pool {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
   }
 
   .pool-head {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .pool-label {
-    color: var(--text-faint);
-    letter-spacing: 0.02em;
+    color: var(--ink-mute);
+    letter-spacing: 0.01em;
   }
 
   .pool-value {
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
     font-weight: 500;
   }
 
   .pool-value .total {
-    color: var(--text-faint);
+    color: var(--ink-faint);
     font-weight: 400;
+    margin-left: 3px;
   }
 
   .track {
-    height: 3px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 2px;
-    overflow: hidden;
+    height: 2px;
+    background: var(--rule-soft);
     position: relative;
+    overflow: hidden;
   }
 
   .fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent-soft), var(--accent));
-    border-radius: 2px;
+    background: var(--accent);
     transform-origin: left center;
     transform: scaleX(0);
-    transition: transform 700ms var(--ease-out);
+    transition: transform 900ms var(--overshoot);
   }
 
+  /* ---------- 重置信息 ---------- */
+  .meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 16px;
+    row-gap: 6px;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .meta .label {
+    color: var(--ink-faint);
+    letter-spacing: 0.02em;
+  }
+
+  .meta .value {
+    color: var(--ink-mute);
+    text-align: right;
+  }
+
+  /* ---------- 页脚 ---------- */
   .footer {
-    font-size: 11px;
-    color: var(--text-faint);
-    letter-spacing: 0.06em;
-    text-align: center;
+    padding-top: 16px;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
   }
 
+  /* ---------- 入场动效:顶栏/标题/页脚 ---------- */
+  .reveal {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: reveal 500ms var(--ease-out) forwards;
+  }
+  .reveal.d1 { animation-delay: 40ms; }
+  .reveal.d2 { animation-delay: 120ms; }
+  .reveal.d3 { animation-delay: 900ms; }
+
+  @keyframes reveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- 桌面端 ---------- */
+  @media (min-width: 760px) {
+    body { padding: 40px clamp(40px, 6vw, 80px); }
+
+    .topbar { padding-bottom: 18px; font-size: 13px; }
+
+    .heading { padding: 80px 0 52px; max-width: 1400px; }
+    .heading .eyebrow { font-size: 12px; margin-bottom: 22px; }
+    .heading h1 { font-size: clamp(2.2rem, 5.5vw, 4rem); }
+
+    .grid {
+      grid-template-columns: 1fr 1fr;
+      max-width: 1400px;
+    }
+
+    .cell {
+      padding: 56px clamp(28px, 4vw, 48px) 48px;
+      gap: 36px;
+    }
+    .cell + .cell {
+      border-top: none;
+      border-left: 1px solid var(--rule);
+    }
+
+    .cell-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .cell-tag { font-size: 11px; }
+    .cell-title {
+      font-size: 15px;
+      text-align: left;
+    }
+
+    .countdown { font-size: clamp(2.8rem, 7vw, 5rem); }
+
+    .pool { gap: 12px; }
+    .pool-head { font-size: 13px; }
+
+    .meta {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      font-size: 13px;
+      margin-top: auto;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+    .meta .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .footer {
+      padding-top: 22px;
+      font-size: 11px;
+    }
+  }
+
+  /* ---------- 降级 ---------- */
   @media (prefers-reduced-motion: reduce) {
     .reel { transition: none; }
     .fill { transition: none; }
+    .reveal, .cell { opacity: 1; transform: none; clip-path: none; animation: none; }
+    .grid::before { transform: scaleX(1); animation: none; }
+    .countdown::after { display: none; }
+    .topbar .brand .dot { animation: none; }
+    .sep { animation: none; }
+    .days { animation: none; }
   }
 </style>
 </head>
 <body>
 
-  <div class="header">
-    <div class="brand">SenseNova · Free</div>
-    <h1>额度重置倒计时</h1>
-  </div>
+  <header class="topbar reveal d1">
+    <div class="brand"><span class="dot"></span>SenseNova</div>
+    <div class="status"><b>Free</b>公测版 · 服务正常</div>
+  </header>
 
-  <div class="cards">
+  <section class="heading">
+    <div class="eyebrow reveal d1">Quota Reset</div>
+    <h1 class="reveal d2">额度重置<br><b>倒计时</b></h1>
+  </section>
 
-    <div class="card" data-card="window">
-      <div class="card-head">
-        <div class="card-label">5 小时窗口</div>
-        <div class="card-title">Flash-Lite 专属积分池</div>
+  <div class="grid">
+
+    <div class="cell">
+      <div class="cell-head">
+        <div class="cell-tag">5H Window</div>
+        <div class="cell-title">Flash-Lite 专属积分池</div>
       </div>
       <div class="countdown" data-countdown="window"></div>
       <div class="pool">
         <div class="pool-head">
           <span class="pool-label">窗口余额</span>
-          <span class="pool-value"><span data-balance="window">60,000</span> <span class="total">/ 60,000</span></span>
+          <span class="pool-value"><span data-balance="window">60,000</span><span class="total"> / 60,000</span></span>
         </div>
         <div class="track"><div class="fill" data-fill="window"></div></div>
       </div>
-      <div class="reset-info">
-        <div class="row"><span class="label">下次重置</span><span class="value" data-reset="window">—</span></div>
-        <div class="row"><span class="label">周期</span><span class="value">每 5 小时滚动</span></div>
+      <div class="meta">
+        <span class="label">下次重置</span><span class="value" data-reset="window">—</span>
+        <span class="label">周期</span><span class="value">每 5 小时滚动</span>
       </div>
     </div>
 
-    <div class="card" data-card="weekly">
-      <div class="card-head">
-        <div class="card-label">周额度</div>
-        <div class="card-title">通用积分池 · 全模型可用</div>
+    <div class="cell">
+      <div class="cell-head">
+        <div class="cell-tag">Weekly</div>
+        <div class="cell-title">通用积分池 · 全模型可用</div>
       </div>
       <div class="countdown" data-countdown="weekly"></div>
       <div class="pool">
         <div class="pool-head">
           <span class="pool-label">本周余额</span>
-          <span class="pool-value"><span data-balance="weekly">533,992</span> <span class="total">/ 600,000</span></span>
+          <span class="pool-value"><span data-balance="weekly">533,992</span><span class="total"> / 600,000</span></span>
         </div>
         <div class="track"><div class="fill" data-fill="weekly"></div></div>
       </div>
-      <div class="reset-info">
-        <div class="row"><span class="label">下次重置</span><span class="value" data-reset="weekly">—</span></div>
-        <div class="row"><span class="label">周期</span><span class="value">每 7 天重置</span></div>
+      <div class="meta">
+        <span class="label">下次重置</span><span class="value" data-reset="weekly">—</span>
+        <span class="label">周期</span><span class="value">每 7 天重置</span>
       </div>
     </div>
 
   </div>
 
-  <div class="footer">数据基于 2026-10-17 快照 · 周期按官方规则推算</div>
+  <footer class="footer reveal d3">
+    <span>Snapshot 2026-10-17</span>
+    <span>Cycle per official rules</span>
+  </footer>
 
 <script>
 (function () {
-  // 时区: Asia/Shanghai (+08:00)
-  // 5h 窗口参考边界: 2026-10-17 19:30:00 +08:00
-  // 周额度参考边界: 2026-10-18 08:30:00 +08:00
+  // Asia/Shanghai (+08:00) 参考边界
   const refs = {
-    window: { base: Date.UTC(2026, 9, 17, 11, 30, 0), period: 5 * 3600 * 1000 },  // 11:30 UTC = 19:30 +08
-    weekly: { base: Date.UTC(2026, 9, 18, 0, 30, 0),  period: 7 * 24 * 3600 * 1000 } // 00:30 UTC = 08:30 +08
+    window: { base: Date.UTC(2026, 9, 17, 11, 30, 0), period: 5 * 3600 * 1000 },      // 19:30 CST
+    weekly: { base: Date.UTC(2026, 9, 18, 0, 30, 0),  period: 7 * 24 * 3600 * 1000 }   // 08:30 CST
   };
 
   const balances = {
     window: { used: 0, total: 60000 },
     weekly: { used: 60000 - 533992.208, total: 600000 }
   };
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function nextBoundary(key) {
     const { base, period } = refs[key];
@@ -333,102 +519,172 @@
     return next;
   }
 
-  function pad(n, len) {
-    return String(n).padStart(len, '0');
-  }
+  function pad(n) { return String(n).padStart(2, '0'); }
 
   function fmtRemaining(ms) {
     if (ms < 0) ms = 0;
     const s = Math.floor(ms / 1000);
-    const days = Math.floor(s / 86400);
-    const h = Math.floor((s % 86400) / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    return { days, h, m, sec };
+    return {
+      days: Math.floor(s / 86400),
+      h: Math.floor((s % 86400) / 3600),
+      m: Math.floor((s % 3600) / 60),
+      sec: s % 60
+    };
   }
 
   function fmtReset(ts) {
-    const d = new Date(ts);
     const opt = { timeZone: 'Asia/Shanghai', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
-    return new Intl.DateTimeFormat('zh-CN', opt).format(d).replace(/\//g, '月').replace(/月(\d+),?/, '月$1日') + ' (CST)';
+    return new Intl.DateTimeFormat('zh-CN', opt).format(new Date(ts)).replace('/', '月').replace(/月(\d+)\s/, '月$1日 ') + ' CST';
   }
 
-  // ---- 数字翻牌组件 ----
+  // ---- 老虎机式翻滚数字(双倍 reel, 正向滚动 + rebase) ----
+  // reel 含 20 格 (0-9 两份), 每格 = 5% reel 高. pos 为连续位置, 显示 = pos % 10.
+  const COPIES = 2;
+  const STEP_PCT = 100 / (10 * COPIES); // 每格 5%
+  const REBASE_AT = 18; // pos 接近 18 时无过渡归位 10
+
+  function buildReel() {
+    const reel = document.createElement('span');
+    reel.className = 'reel';
+    for (let c = 0; c < COPIES; c++) {
+      for (let n = 0; n <= 9; n++) {
+        const s = document.createElement('span');
+        s.textContent = n;
+        reel.appendChild(s);
+      }
+    }
+    reel.style.transform = 'translateY(0%)';
+    return reel;
+  }
+
   function buildCountdown(el, includeDays) {
-    const parts = includeDays
-      ? ['d','h','m','s']
-      : ['h','m','s'];
+    const parts = includeDays ? ['d', 'h', 'm', 's'] : ['h', 'm', 's'];
     el.innerHTML = '';
-    const state = { digits: {} };
-    parts.forEach((key, idx) => {
-      if (key === 'd') {
-        const dWrap = document.createElement('span');
-        dWrap.className = 'group days';
-        dWrap.dataset.group = 'd';
-        const dNum = document.createElement('span');
-        dNum.className = 'days-num';
-        dNum.textContent = '0天';
-        dWrap.appendChild(dNum);
-        el.appendChild(dWrap);
-      } else {
-        const len = 2;
-        for (let i = 0; i < len; i++) {
-          const slot = document.createElement('span');
-          slot.className = 'digit';
-          const reel = document.createElement('span');
-          reel.className = 'reel';
-          for (let n = 0; n <= 9; n++) {
-            const s = document.createElement('span');
-            s.textContent = n;
-            reel.appendChild(s);
-          }
-          slot.appendChild(reel);
-          slot.dataset.value = '0';
-          reel.style.transform = 'translateY(0%)';
-          el.appendChild(slot);
-          const slotKey = key + i;
-          state.digits[slotKey] = { reel, slot, value: 0 };
-        }
-        if (idx < parts.length - 1) {
-          const sep = document.createElement('span');
-          sep.className = 'sep';
-          sep.textContent = ':';
-          el.appendChild(sep);
-        }
+    const state = { digits: {}, daysEl: null, bootOrder: [] };
+
+    if (includeDays) {
+      const dw = document.createElement('span');
+      dw.className = 'group days';
+      const dn = document.createElement('span');
+      dn.textContent = '0天';
+      dw.appendChild(dn);
+      el.appendChild(dw);
+      state.daysEl = dn;
+    }
+
+    const timed = parts.filter(p => p !== 'd');
+    timed.forEach((key, idx, arr) => {
+      for (let i = 0; i < 2; i++) {
+        const slot = document.createElement('span');
+        slot.className = 'digit';
+        const reel = buildReel();
+        slot.appendChild(reel);
+        el.appendChild(slot);
+        const obj = { reel, pos: 0, digit: 0 };
+        state.digits[key + i] = obj;
+        state.bootOrder.push(obj);
+      }
+      if (idx < arr.length - 1) {
+        const sep = document.createElement('span');
+        sep.className = 'sep';
+        sep.textContent = ':';
+        el.appendChild(sep);
       }
     });
     return state;
   }
 
-  function setDigit(obj, value) {
-    if (obj.value === value) return;
-    obj.value = value;
-    obj.reel.style.transform = 'translateY(' + (value * -10) + '%)';
+  function setReel(obj, pos, transition) {
+    obj.reel.style.transition = transition;
+    obj.reel.style.transform = 'translateY(' + (-pos * STEP_PCT) + '%)';
   }
 
-  function updateCountdown(el, state, r) {
-    const nums = [pad(r.h, 2), pad(r.m, 2), pad(r.sec, 2)];
-    let idx = 0;
-    if (state.digits['h0'] === undefined) {
-      // 含天数
-      const daysEl = el.querySelector('.days-num');
-      const dText = r.days + '天';
-      if (daysEl.textContent !== dText) daysEl.textContent = dText;
+  // 落定到某数字(无过渡, 仅初始/降级用)
+  function parkDigit(obj, digit) {
+    obj.digit = digit;
+    obj.pos = digit;
+    setReel(obj, obj.pos, 'none');
+  }
+
+  // 入场: 停在目标+10 格, 延迟后过冲滚到目标(空转一圈再落定)
+  function bootDigit(obj, finalDigit, delay) {
+    obj.digit = finalDigit;
+    obj.pos = finalDigit + 10; // 一圈前
+    setReel(obj, obj.pos, 'none');
+    void obj.reel.offsetWidth; // 强制 reflow
+    setTimeout(function () {
+      setReel(obj, obj.pos, 'transform 1300ms cubic-bezier(0.34, 1.56, 0.64, 1)');
+      obj.pos = finalDigit;
+      setReel(obj, obj.pos, ''); // 继承上面设的 transition
+      // 落定后清掉内联 transition, 让 CSS 的 550ms 接管 tick
+      setTimeout(function () {
+        obj.reel.style.transition = '';
+      }, 1350);
+    }, delay);
+  }
+
+  // 每秒 tick: 正向前进到新数字, 过冲弹跳, 必要时 rebase
+  function advanceDigit(obj, newDigit) {
+    if (obj.digit === newDigit) return;
+    obj.digit = newDigit;
+    const cur = obj.pos % 10;
+    let delta = (newDigit - cur + 10) % 10;
+    if (delta === 0) delta = 10;
+    let target = obj.pos + delta;
+    // rebase: 若 target 将触及边界, 先无过渡归位
+    if (target >= REBASE_AT) {
+      obj.pos -= 10;
+      target -= 10;
+      setReel(obj, obj.pos, 'none');
+      void obj.reel.offsetWidth;
     }
-    ['h','m','s'].forEach(key => {
-      const str = pad(key === 'h' ? r.h : key === 'm' ? r.m : r.sec, 2);
+    obj.pos = target;
+    setReel(obj, obj.pos, ''); // 用 CSS 550ms 过冲
+  }
+
+  function updateCountdown(state, r, isBoot) {
+    if (state.daysEl) {
+      const t = r.days + '天';
+      if (state.daysEl.textContent !== t) state.daysEl.textContent = t;
+    }
+    const vals = { h: r.h, m: r.m, s: r.sec };
+    Object.keys(vals).forEach(function (key) {
+      const str = pad(vals[key]);
       for (let i = 0; i < 2; i++) {
         const v = parseInt(str[i], 10);
         const obj = state.digits[key + i];
-        if (obj) setDigit(obj, v);
+        if (isBoot) {
+          parkDigit(obj, v); // 先就位, bootDigit 会接管
+        } else {
+          advanceDigit(obj, v);
+        }
       }
     });
   }
 
-  function updateFill(key, used, total) {
+  // 入场编排: 逐位 boot, 错峰锁定
+  function bootCountdown(state, r) {
+    // 先全部 park 到正确数字(reduce 模式直接落定)
+    if (reduce) {
+      updateCountdown(state, r, true);
+      return;
+    }
+    // 先无过渡停在目标, 然后逐位启动空转
+    updateCountdown(state, r, true);
+    let i = 0;
+    state.bootOrder.forEach(function (obj) {
+      bootDigit(obj, obj.digit, 400 + i * 70);
+      i++;
+    });
+  }
+
+  function updateFill(key, used, total, delay) {
     const p = total > 0 ? Math.max(0, Math.min(1, 1 - used / total)) : 0;
     const el = document.querySelector('[data-fill="' + key + '"]');
-    if (el) el.style.transform = 'scaleX(' + p + ')';
+    if (!el) return;
+    setTimeout(function () {
+      el.style.transform = 'scaleX(' + p + ')';
+    }, delay);
   }
 
   const winEl = document.querySelector('[data-countdown="window"]');
@@ -436,20 +692,26 @@
   const winState = buildCountdown(winEl, false);
   const weekState = buildCountdown(weekEl, true);
 
-  function tick() {
+  function tick(isBoot) {
     const now = Date.now();
-    const winNext = nextBoundary('window');
-    const weekNext = nextBoundary('weekly');
-    document.querySelector('[data-reset="window"]').textContent = fmtReset(winNext);
-    document.querySelector('[data-reset="weekly"]').textContent = fmtReset(weekNext);
-    updateCountdown(winEl, winState, fmtRemaining(winNext - now));
-    updateCountdown(weekEl, weekState, fmtRemaining(weekNext - now));
-    updateFill('window', balances.window.used, balances.window.total);
-    updateFill('weekly', balances.weekly.used, balances.weekly.total);
+    const wn = nextBoundary('window');
+    const wk = nextBoundary('weekly');
+    document.querySelector('[data-reset="window"]').textContent = fmtReset(wn);
+    document.querySelector('[data-reset="weekly"]').textContent = fmtReset(wk);
+    if (isBoot) {
+      bootCountdown(winState, fmtRemaining(wn - now));
+      bootCountdown(weekState, fmtRemaining(wk - now));
+    } else {
+      updateCountdown(winState, fmtRemaining(wn - now), false);
+      updateCountdown(weekState, fmtRemaining(wk - now), false);
+    }
+    updateFill('window', balances.window.used, balances.window.total, 1100);
+    updateFill('weekly', balances.weekly.used, balances.weekly.total, 1300);
   }
 
-  tick();
-  setInterval(tick, 1000);
+  tick(true);
+  // 入场空转完成后 (~1.8s) 再开始每秒 tick
+  setTimeout(function () { setInterval(function () { tick(false); }, 1000); }, 2000);
 })();
 </script>
 </body>
